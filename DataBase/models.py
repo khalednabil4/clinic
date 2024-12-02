@@ -197,8 +197,42 @@ class Reservation(MPTTModel):
             return self.package_service.special_price
         return self.service.base_price
 
+class DoctorPaymentConfig(models.Model):
+    Doctor= models.ForeignKey('Administrator', on_delete=models.CASCADE, related_name='DoctorPaymentConfig')
+    Way= models.CharField(max_length=20, choices=[
+        ('EveryDayCome', '='),
+        ('Percentage', '%'),
+        ('EveryDrRevealed', '+'),
+        ('BYMonth', '*')
+    ])
+    TimeStart=models.DateTimeField(auto_now=True)
+    TimeEnd=models.DateTimeField(blank=True,null=True)
+    IsActive = models.BooleanField(default=True)
+    @property
+    def TotalEarnings(self):
+        pass
 
 
+
+class ChatRoom(models.Model):
+    patient = models.ForeignKey('patient', on_delete=models.CASCADE, related_name='chat_rooms')
+    administrator = models.ForeignKey('Administrator', on_delete=models.CASCADE, related_name='chat_rooms')
+    CreatedAt = models.DateTimeField(auto_now_add=True)
+    LastMessageAt = models.DateTimeField(auto_now=True)
+    ISActive = models.BooleanField(default=True)
+    def __str__(self):
+        return f"Chat between {self.patient.name} and {self.administrator.name}"
+
+class Message(models.Model):
+    ChatRoom = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='Message')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='SentMessage')
+    content = models.TextField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+    IsRead = models.BooleanField(default=False)
+    Attachment = models.FileField(upload_to='Chatattachments/', null=True, blank=True)
+
+    def __str__(self):
+        return f"Message from {self.sender.name} at {self.sent_at}"
 class HomeVisit(models.Model):
     location = models.CharField(max_length=255)  # e.g., an address or description
     latitude = models.FloatField()  # Latitude for geolocation
