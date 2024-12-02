@@ -17,6 +17,12 @@ DAY_CHOICES = [
     ("SATURDAY", 'Saturday'),
     ("SUNDAY", 'Sunday'),
 ]
+ImportantLevel = [
+    ("important", '1'),
+    ("Mid", '2'),
+    ("normal", '3')
+
+]
 def generate_unique_code():
     # Generate a random string of length 8 (you can adjust the length and characters)
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
@@ -39,6 +45,8 @@ class Days(models.Model):
 
     name = models.CharField(max_length=20, choices=DAY_CHOICES)
     Admin=models.ForeignKey('Administrator', related_name='DaysOpen',on_delete=models.CASCADE)
+    HourTo=models.TimeField()
+    HourFrom=models.TimeField()
     date = models.DateField()
     def __str__(self):
         return f"{self.name} - {self.date}"
@@ -65,6 +73,8 @@ class Doctoravailability(models.Model):
     DateFrom=models.TimeField()
     DayOpen = models.ForeignKey(Days, on_delete=models.CASCADE, related_name='Schedule')
     DateTo=models.TimeField()
+    LevelImportant = models.CharField(max_length=20, choices=ImportantLevel,blank=True)
+    TimeAdd=models.DateTimeField(auto_now=True)
     Status=models.BooleanField(default=0)
     Doctor=models.ForeignKey('Administrator', related_name='admin', on_delete=models.CASCADE)
 
@@ -113,10 +123,10 @@ class Service(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField()
     Price = models.DecimalField(max_digits=10, decimal_places=2)
-    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='services')
+   # clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='services')
     doctor = models.ForeignKey(Administrator, on_delete=models.CASCADE, related_name='Service')
-    NextTime=models.DateField()
-    Immediately=models.BooleanField()
+    IsActive=models.BooleanField(default=True)
+
     def __str__(self):
         return f"{self.name} at {self.clinic.name} (Dr. {self.doctor.name})"
 class PatientHistory(models.Model):
@@ -132,7 +142,7 @@ class PatientHistory(models.Model):
 class PatientCondition(models.Model):
     PatientCase= models.TextField()
     DoctorRequirements=models.TextField()
-    Service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='PatientCondition')
+    Reservation = models.ForeignKey('Reservation', on_delete=models.CASCADE, related_name='PatientCondition')
     PatientVitals=models.JSONField(null=True,blank=True)
     Doc = models.ImageField(blank=True, null=True, upload_to='PatientDoc')
 class Package(models.Model):
@@ -187,7 +197,8 @@ class Reservation(MPTTModel):
     ], default='CASH')
     TotalAmount = models.DecimalField(max_digits=10, decimal_places=2)  # Total service cost
     AmountPaid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
+    NextTime=models.DateField(blank=True)
+    Immediately=models.BooleanField(null=True)
     class MPTTMeta:
         order_insertion_by = ['reservation_date']
 
